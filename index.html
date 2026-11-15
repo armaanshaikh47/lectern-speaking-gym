@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lectern">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Lectern Speaking Gym</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone-width column, a timekeeper's clock pinned on top while speaking, tabs pinned at the bottom. */
+:root{
+  --bg:#EEF1F6; --surface:#FFFFFF; --sunk:#E3E8F0; --ink:#16223B; --muted:#56637D; --line:#D3DAE6;
+  --accent:#0B6E6E; --on-accent:#FFFFFF;
+  --filler:#9A4A05; --filler-bg:#FCE6C2;
+  --casual:#9C1757; --casual-bg:#FADAE9;
+  --hit:#0E6F43; --hit-bg:#D3F0DF;
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E1420; --surface:#172030; --sunk:#111926; --ink:#E7ECF4; --muted:#96A3BA; --line:#2B374B;
+  --accent:#5CC8C2; --on-accent:#062A29;
+  --filler:#F5B85C; --filler-bg:#3B2C10;
+  --casual:#F28DBB; --casual-bg:#3A1529;
+  --hit:#6FD9A2; --hit-bg:#10321F;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0E1420; --surface:#172030; --sunk:#111926; --ink:#E7ECF4; --muted:#96A3BA; --line:#2B374B;
+  --accent:#5CC8C2; --on-accent:#062A29;
+  --filler:#F5B85C; --filler-bg:#3B2C10;
+  --casual:#F28DBB; --casual-bg:#3A1529;
+  --hit:#6FD9A2; --hit-bg:#10321F;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--body);-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.app{max-width:560px;margin:0 auto;padding-block:14px 104px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body.drilling .app{padding-block-end:24px}
+h1,h2,h3,p,ol,ul{margin:0}
+h1,h2{font-family:var(--display);text-wrap:balance;line-height:1.15}
+h1{font-size:28px;font-weight:700}
+h2{font-size:21px;font-weight:700}
+h3{font:600 12px/1.3 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:18px}
+.brand{font:700 20px/1 var(--display);letter-spacing:-.01em}
+.brand i{font-style:normal;color:var(--accent)}
+.sync{font-size:12px;color:var(--muted);text-align:right}
+.stack{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.eyebrow{font:600 12px/1.3 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.muted{color:var(--muted)} .small{font-size:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>*{min-width:0}
+button,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border-radius:12px;border:1px solid var(--line);background:var(--surface);padding:11px 16px;font-weight:600;min-height:46px}
+button.primary{background:var(--accent);color:var(--on-accent);border-color:transparent}
+button.big{width:100%;font-size:18px;min-height:56px}
+button.ghost{background:transparent}
+button:disabled{opacity:.55;cursor:default}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+select{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 12px;min-height:46px}
+textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:14px;font-size:17px;line-height:1.5;resize:vertical}
+label{font-weight:600;font-size:14px;display:block;margin-bottom:6px}
+
+/* Today */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.stat b{display:block;font:700 26px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.plan{list-style:none;padding:0;display:flex;flex-direction:column}
+.plan li+li{border-top:1px solid var(--line)}
+.plan a{display:flex;align-items:center;gap:12px;padding:13px 0;color:inherit;text-decoration:none}
+.plan .tick{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center;font-size:14px;font-weight:700}
+.plan .done .tick{background:var(--hit-bg);border-color:var(--hit);color:var(--hit)}
+.plan .what{flex:1;min-width:0}
+.plan .what small{display:block;color:var(--muted);font-size:13px}
+.plan .go{color:var(--accent);font-weight:600;font-size:14px}
+.spark{width:100%;height:64px;display:block;color:var(--accent)}
+.log{list-style:none;padding:0;font-size:14px}
+.log li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;font-variant-numeric:tabular-nums}
+.log li+li{border-top:1px solid var(--line)}
+
+/* Speak */
+.seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--sunk);border-radius:12px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;min-height:40px;padding:6px;font-size:14px;border-radius:9px}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.side{display:inline-block;margin-top:10px;font-weight:600;font-size:14px;padding:4px 10px;border-radius:999px;background:var(--sunk)}
+.steps{padding-left:20px;margin-top:8px;display:flex;flex-direction:column;gap:2px}
+.words3{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.words3 b{font-family:var(--display);font-size:17px}
+.words3 span{display:block;font-size:14px;color:var(--muted)}
+.clock{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:8px 0 10px;display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
+.clock .t{font:700 44px/1 var(--display);font-variant-numeric:tabular-nums}
+.clock.over .t{color:var(--filler)}
+.clock .bar{grid-column:1/-1;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.clock .bar i{display:block;height:100%;width:0;background:var(--accent)}
+.clock.over .bar i{background:var(--filler)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface)}
+.chip.t{border-style:dashed}
+.chip.t.on{background:var(--hit-bg);color:var(--hit);border-color:var(--hit);border-style:solid}
+.partial{color:var(--muted);font-style:italic;min-height:1.5em}
+
+/* Review */
+.meters{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (min-width:480px){.meters{grid-template-columns:repeat(4,1fr)}}
+.transcript{font-size:17px;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere}
+mark{border-radius:4px;padding:1px 3px;font-weight:600}
+.m-f{background:var(--filler-bg);color:var(--filler)}
+.m-c{background:var(--casual-bg);color:var(--casual)}
+.m-t{background:var(--hit-bg);color:var(--hit)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted);margin-top:10px}
+.swaps{list-style:none;padding:0;font-size:15px}
+.swaps li{padding:8px 0}
+.swaps li+li{border-top:1px solid var(--line)}
+.score{display:grid;grid-template-columns:96px 1fr 28px;gap:10px;align-items:center;font-size:14px;padding:4px 0}
+.score .track{height:8px;border-radius:4px;background:var(--sunk);overflow:hidden}
+.score .track i{display:block;height:100%;background:var(--accent)}
+.score b{font-variant-numeric:tabular-nums;text-align:right}
+.fix{padding:10px 0}
+.fix+.fix{border-top:1px solid var(--line)}
+.fix q{font-style:italic}
+.fix .better{color:var(--hit);font-weight:600}
+.note{font-size:14px;color:var(--muted)}
+.bul{padding-left:20px}
+
+/* Words */
+.word{padding:14px 0}
+.word+.word{border-top:1px solid var(--line)}
+.word .hd{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.word b{font:700 18px/1.2 var(--display)}
+.word em{color:var(--muted);font-size:13px;margin-left:6px}
+.badge{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.badge.p{background:var(--filler-bg);color:var(--filler)}
+.badge.a{background:var(--hit-bg);color:var(--hit)}
+.word .ex{font-size:14px;color:var(--muted);margin-top:4px}
+
+/* Tabs */
+.tabs{position:fixed;inset:auto 0 0;z-index:8;background:var(--surface);border-top:1px solid var(--line);
+  padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.tabs div{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.tabs a{text-align:center;padding:10px 4px;border-radius:10px;color:var(--muted);text-decoration:none;font-weight:600;font-size:14px}
+.tabs a[aria-current="page"]{color:var(--accent);background:var(--sunk)}
+body.drilling .tabs{display:none}
+@media (prefers-reduced-motion:no-preference){.clock .bar i,.score .track i{transition:width .25s linear}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">Lectern<i>.</i></div>
+    <div class="sync" id="sync"></div>
+  </header>
+  <main>
+    <section id="v-today" class="stack"></section>
+    <section id="v-speak" class="stack" hidden></section>
+    <section id="v-register" class="stack" hidden></section>
+    <section id="v-words" class="stack" hidden></section>
+  </main>
+</div>
+<nav class="tabs" aria-label="Sections"><div>
+  <a href="#today" data-tab="today">Today</a>
+  <a href="#speak" data-tab="speak">Speak</a>
+  <a href="#register" data-tab="register">Register</a>
+  <a href="#words" data-tab="words">Words</a>
+</div></nav>
+
+<script>
+"use strict";
+/* ---------- content ---------- */
+const FW = {
+  prep:{n:"PREP",s:["Point: state your view in one sentence","Reason: say why","Example: give one concrete case","Point: restate it and stop"]},
+  star:{n:"STAR",s:["Situation","Task","Action you took","Result"]},
+  wsn:{n:"What, so what, now what",s:["What has happened","Why it matters","What happens next"]},
+  psb:{n:"Problem, solution, benefit",s:["Name the problem","Propose one solution","State the benefit"]},
+  ppf:{n:"Present, past, future",s:["What you do now","Where you came from","What you want next"]},
+  abp:{n:"Acknowledge, bridge, position",s:["Acknowledge their point fairly","Bridge: “At the same time…”","State your position with one reason"]},
+  sbi:{n:"Situation, behaviour, impact, next",s:["The situation","What you observed","The impact it had","The next step you expect"]},
+  story:{n:"Story arc",s:["Set the scene","What changed","How it ended","Why it matters"]},
+  crei:{n:"Claim, reason, evidence, impact",s:["Claim: your side in one sentence","Reason: your strongest argument","Evidence: a fact or example","Impact: why it outweighs the other side"]}
+};
+const PROMPTS = {
+  professional:[
+    ["Give a senior leader a one-minute update on a project you are working on.","wsn"],
+    ["Explain a decision you made recently and justify it.","prep"],
+    ["Introduce yourself to a new team.","ppf"],
+    ["A colleague has just disagreed with your proposal in a meeting. Respond.","abp"],
+    ["Describe a time you solved a difficult problem at work.","star"],
+    ["Pitch one change that would improve your workplace.","psb"],
+    ["Give constructive feedback to someone whose work missed the standard.","sbi"],
+    ["Explain a technical idea from your field to a non-specialist.","prep"],
+    ["You are asked without warning in a meeting: should the team adopt a new tool? Answer.","prep"],
+    ["Summarise the key points of the last meeting you attended.","wsn"],
+    ["Make the case that you should lead the next project.","prep"],
+    ["Give a parent or client disappointing news, professionally.","wsn"],
+    ["Deliver the first minute of a presentation on a topic you know well.","psb"],
+    ["Ask your manager for additional resources and make the case.","psb"],
+    ["Describe a mistake you made at work and what you changed afterwards.","star"],
+    ["Explain what your department does to a visitor.","ppf"]
+  ],
+  conversation:[
+    ["Describe a book, film or series you enjoyed, and say why without retelling the plot.","prep"],
+    ["Describe your city to someone who has never visited.","story"],
+    ["Name a skill you would like to learn and explain why.","prep"],
+    ["Explain one of your hobbies to someone who has never tried it.","prep"],
+    ["Describe a person who influenced you.","story"],
+    ["Tell the story of your last weekend with a beginning, a middle and an end.","story"],
+    ["What do most people get wrong about your job?","prep"],
+    ["Recommend a place to eat and persuade me to go.","prep"],
+    ["Describe a recent news story and give your view of it.","wsn"],
+    ["Describe a journey that did not go to plan.","story"],
+    ["What is the best advice you have been given?","prep"],
+    ["Describe something you changed your mind about.","story"]
+  ],
+  debate:[
+    "remote work is better than office work","homework should be abolished",
+    "AI tools should be allowed in examinations","social media does more harm than good",
+    "a four-day working week should be standard","university degrees are no longer worth the cost",
+    "cities should ban private cars from their centres","schools should teach practical skills before academic theory",
+    "leaders are made, not born","experience matters more than qualifications",
+    "smartphones should be banned in schools","failure is a better teacher than success",
+    "every student should learn to code","tourism does more harm than good"
+  ].map(m=>["This house believes that "+m+".","crei"])
+};
+const MODE_LABEL = {professional:"Professional",conversation:"Conversation",debate:"Debate",register:"Register"};
+// [word, part of speech, stem regex, definition, example]
+const WORDS = [
+  ["articulate","verb","articulat","express an idea clearly in words","She articulated the risks in two sentences."],
+  ["mitigate","verb","mitigat","make a problem less severe","We can mitigate the delay by starting early."],
+  ["prioritise","verb","prioriti[sz]","decide what must come first","We need to prioritise the safety checks."],
+  ["substantiate","verb","substantiat","support a claim with evidence","Can you substantiate that figure?"],
+  ["facilitate","verb","facilitat","make a process easier","The new timetable facilitates collaboration."],
+  ["consolidate","verb","consolidat","combine into one stronger whole","Let us consolidate the three reports."],
+  ["allocate","verb","allocat","assign time, money or people","We allocated two weeks to testing."],
+  ["clarify","verb","clarif","make something easier to understand","May I clarify one point?"],
+  ["concede","verb","conced","admit that a point is true","I concede that the cost is high."],
+  ["contend","verb","contend","argue that something is the case","I contend that the benefits outweigh it."],
+  ["underscore","verb","underscor","emphasise the importance of","These results underscore the need for training."],
+  ["anticipate","verb","anticipat","expect and prepare for","We anticipate strong demand."],
+  ["reconcile","verb","reconcil","make two things compatible","We must reconcile quality with cost."],
+  ["streamline","verb","streamlin","make simpler and more efficient","We streamlined the approval process."],
+  ["implement","verb","implement","put a plan into action","We will implement the change in January."],
+  ["evaluate","verb","evaluat","judge the quality or value of","We should evaluate both options."],
+  ["refine","verb","refin","improve by small changes","I would like to refine the proposal."],
+  ["acknowledge","verb","acknowledg","accept or recognise","I acknowledge your concern."],
+  ["elaborate","verb","elaborat","add more detail","Could you elaborate on that?"],
+  ["justify","verb","justif","give good reasons for","The results justify the investment."],
+  ["address","verb","address","deal with an issue directly","We need to address the root cause."],
+  ["advocate","verb","advocat","publicly recommend","I advocate a phased approach."],
+  ["viable","adjective","viab","able to work successfully","Is that a viable alternative?"],
+  ["pragmatic","adjective","pragmati","practical rather than ideal","A pragmatic solution is to share the room."],
+  ["compelling","adjective","compelling","convincing and hard to ignore","She made a compelling case."],
+  ["feasible","adjective","feasib","possible within the limits","That deadline is not feasible."],
+  ["robust","adjective","robust","strong and unlikely to fail","We need a more robust process."],
+  ["coherent","adjective","coheren","logical and well connected","The plan is coherent from start to finish."],
+  ["concise","adjective","concise","short and clear","Please keep the summary concise."],
+  ["pivotal","adjective","pivotal","of central importance","This is a pivotal moment for the team."],
+  ["tangible","adjective","tangibl","real and measurable","We have seen tangible improvements."],
+  ["comprehensive","adjective","comprehensive","covering everything needed","We need a comprehensive review."],
+  ["ambiguous","adjective","ambigu","open to more than one meaning","The instructions were ambiguous."],
+  ["constraint","noun","constraint","a limit you must work within","Budget is our main constraint."],
+  ["rationale","noun","rationale","the reasoning behind a decision","Let me explain the rationale."],
+  ["implication","noun","implication","a likely consequence","Consider the implications for staffing."],
+  ["consensus","noun","consensus","general agreement","We reached a consensus quickly."],
+  ["precedent","noun","precedent","an earlier case used as a guide","This would set a precedent."],
+  ["trade-off","noun","trade[- ]?off","a balance between two competing things","There is a trade-off between speed and accuracy."],
+  ["perspective","noun","perspective","a particular way of seeing something","From the client’s perspective, it is late."],
+  ["criterion","noun","criteri","a standard used to judge","Cost is only one criterion."],
+  ["scope","noun","scope","the range a piece of work covers","That falls outside the scope of this project."],
+  ["consequently","connector","consequently","as a result","The file was lost; consequently, we started again."],
+  ["nevertheless","connector","nevertheless","in spite of that","It is expensive. Nevertheless, it is worth it."],
+  ["moreover","connector","moreover","in addition, and more importantly","It is cheaper. Moreover, it is faster."],
+  ["conversely","connector","conversely","in the opposite way","Conversely, a smaller team may move faster."],
+  ["notably","connector","notably","especially worth mentioning","Several areas improved, notably attendance."],
+  ["in essence","connector","in essence","stating the basic point","In essence, we need more time."]
+];
+const REGISTER = [
+  ["We’ve got a lot of stuff to sort out before Friday.","We have several matters to resolve before Friday."],
+  ["I kinda think the plan won’t work.","I have reservations about whether the plan is viable."],
+  ["Can you guys get back to me ASAP?","Could you all respond at your earliest convenience?"],
+  ["The meeting was a total waste of time.","The meeting was not a productive use of our time."],
+  ["He messed up the numbers again.","There were errors in his figures again."],
+  ["I dunno, I’ll find out.","I am not certain. I will find out and confirm."],
+  ["That idea is pretty cool.","That idea has real merit."],
+  ["We need to figure out what went wrong.","We need to determine what went wrong."],
+  ["Sorry, I totally forgot about it.","I apologise; it slipped my attention."],
+  ["The boss is gonna be mad.","The manager is likely to be displeased."],
+  ["Let’s get rid of the old system.","I propose that we retire the old system."],
+  ["It’s a big deal for the kids.","It is highly significant for the students."],
+  ["I think, like, we should wait.","I recommend that we wait."],
+  ["Tons of people complained.","A considerable number of people raised complaints."],
+  ["That’s not my problem.","That falls outside my area of responsibility."],
+  ["You’re wrong about that.","I see it differently, and I can explain why."],
+  ["No way I can do it by then.","That deadline is not feasible for me. Could we consider an alternative?"],
+  ["So yeah, that’s basically it.","That concludes my summary."],
+  ["We came up with a bunch of ideas.","We generated several proposals."],
+  ["Hang on a sec.","One moment, please."],
+  ["I need more money for this project.","This project requires additional funding."],
+  ["The results were kind of bad.","The results were below expectations."],
+  ["I’ll look into it and get back to you.","I will investigate and report back to you."],
+  ["Honestly, the whole thing is a mess.","The situation needs to be brought under control."]
+];
+const FILLER_RE = /\b(u+m+|u+h+|e+r+m*|a+h+|h+m+|you know|i mean|sort of|kind of|basically|actually|literally|honestly|obviously|anyway|so yeah|i guess|or something|and stuff|or whatever|you see|okay so|like)\b/gi;
+const LIKE_BEFORE = /(?:would|'d|’d|i|we|you|they|to|feel|feels|felt|look|looks|looked|sound|sounds|seem|seems|is|was|are|were|be|just|much|more|something|anything|nothing|really|also|not|n't|n’t|do|does|did|people|things|who)$/i;
+const CASUAL = [
+  ["gonna","going to"],["wanna","want to"],["gotta","have to"],["kinda","somewhat"],["sorta","somewhat"],["dunno","do not know"],
+  ["ain't|ain’t","is not"],["a lot of|lots of","many, a considerable number of"],["tons of|loads of|a bunch of|bunch of","several, a great many"],
+  ["stuff","name the thing itself"],["guys","everyone, colleagues"],["kids","children, students"],["yeah|yep|yup","yes"],["nope|nah","no"],
+  ["cool|awesome|amazing","effective, impressive, excellent"],["super","very, highly"],["pretty (?=good|much|sure|big|bad|hard|easy|well|cool|clear)","fairly, reasonably"],
+  ["totally","completely, entirely"],["big deal","significant matter"],["get rid of|got rid of","remove, eliminate"],["figure out|figured out","determine, establish"],
+  ["come up with|came up with","propose, devise"],["look into|looked into","investigate"],["deal with|dealt with","address, handle"],
+  ["mess(?:ed)? up|screw(?:ed)? up","make an error"],["crazy|insane","remarkable, unreasonable"],["asap","as soon as possible"],
+  ["bro|dude|mate","use the name, or nothing"],["no way","that is not possible"],["a sec|a second","a moment"],["mad","angry, displeased"],["okay so|ok so","start with your point"]
+].map(([src,up])=>[new RegExp("\\b(?:"+src+")\\b","gi"),up]);
+
+/* ---------- helpers ---------- */
+const $ = (s,r=document)=>r.querySelector(s);
+const esc = s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pick = a=>a[Math.floor(Math.random()*a.length)];
+const pad = n=>String(n).padStart(2,"0");
+const dayKey = t=>{const d=new Date(t);return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())};
+const mmss = s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+":"+pad(s%60)};
+const rate = s=>s.w?Math.round(s.f/s.w*1000)/10:0;
+const wpm = s=>s.secs>=5?Math.round(s.w/(s.secs/60)):0;
+
+/* ---------- state ---------- */
+const KEY="lectern.v1";
+let S={v:1,sessions:[]};
+try{const r=JSON.parse(localStorage.getItem(KEY));if(r&&r.v===1&&Array.isArray(r.sessions))S=r}catch(e){}
+let docRef=null,syncing=false,syncAgain=false,samplePromise=Promise.resolve(null),dict=null;
+const drills=()=>S.sessions.filter(s=>s.mode!=="register");
+function uses(){const u={};for(const s of S.sessions)for(const w of s.hit||[])u[w]=(u[w]||0)+1;return u}
+function merge(a,b){const m=new Map();for(const s of [...a,...b]){const o=m.get(s.t);if(!o||(s.sc&&!o.sc))m.set(s.t,s)}
+  return [...m.values()].sort((x,y)=>x.t-y.t).slice(-300)}
+function setSync(k){$("#sync").textContent=k==="cloud"?"Progress saved to your account":k==="local"?"Progress saved on this device only":""}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){} sync()}
+async function sync(){
+  if(!docRef)return; if(syncing){syncAgain=true;return} syncing=true;
+  try{
+    const snap=await Promise.race([docRef.get(),new Promise((_,r)=>setTimeout(()=>r({code:"timeout"}),10000))]);
+    const remote=snap.exists&&Array.isArray(snap.data().sessions)?JSON.parse(JSON.stringify(snap.data().sessions)):[];
+    const merged=merge(remote,S.sessions);
+    const grew=merged.length!==S.sessions.length;
+    const changed=JSON.stringify(merged)!==JSON.stringify(remote);
+    S.sessions=merged; try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+    if(changed)await docRef.set({v:1,sessions:merged});
+    setSync("cloud"); if(grew)renderPassive();
+  }catch(e){setSync("local")}
+  syncing=false; if(syncAgain){syncAgain=false;sync()}
+}
+async function initCaps(){
+  const c=window.claude;
+  if(!c||!c.use){setSync("local");return}
+  samplePromise=c.use("sample").catch(()=>null);
+  c.use("dictation").then(d=>{if(d){dict=d;wireDict();if(drill.phase==="setup")renderSpeak()}}).catch(()=>{});
+  try{
+    const [db,user]=await Promise.all([c.use("db"),c.use("user")]);
+    const id=db&&user?await user.id():null;
+    if(!id){setSync("local");return}
+    docRef=db.doc("data/users/"+id+"/progress"); sync();
+  }catch(e){setSync("local")}
+}
+
+/* ---------- analysis ---------- */
+function analyse(text,targets){
+  const R=[]; let m;
+  FILLER_RE.lastIndex=0;
+  while((m=FILLER_RE.exec(text))){
+    if(m[0].toLowerCase()==="like"){
+      const before=text.slice(0,m.index).trimEnd();
+      if(LIKE_BEFORE.test(before))continue;
+    }
+    R.push({a:m.index,b:m.index+m[0].length,k:"f"});
+  }
+  const swaps=new Map();
+  for(const [re,up] of CASUAL){re.lastIndex=0;while((m=re.exec(text))){R.push({a:m.index,b:m.index+m[0].length,k:"c"});swaps.set(m[0].trim().toLowerCase(),up)}}
+  const hit=[];
+  for(const w of targets){const re=new RegExp("\\b"+w[2]+"\\w*","gi");let any=false;while((m=re.exec(text))){R.push({a:m.index,b:m.index+m[0].length,k:"t"});any=true}if(any)hit.push(w[0])}
+  R.sort((x,y)=>x.a-y.a||(y.b-y.a)-(x.b-x.a));
+  let html="",pos=0,f=0,c=0;
+  for(const r of R){ if(r.a<pos)continue; html+=esc(text.slice(pos,r.a))+'<mark class="m-'+r.k+'">'+esc(text.slice(r.a,r.b))+"</mark>"; pos=r.b; if(r.k==="f")f++; if(r.k==="c")c++ }
+  html+=esc(text.slice(pos));
+  const w=(text.match(/[A-Za-z0-9][A-Za-z0-9'’-]*/g)||[]).length;
+  return {html,w,f,c,hit,swaps:[...swaps]};
+}
+
+/* ---------- Today ---------- */
+function streak(){
+  const days=new Set(S.sessions.map(s=>dayKey(s.t))); let d=new Date(),n=0;
+  if(!days.has(dayKey(d)))d.setDate(d.getDate()-1);
+  while(days.has(dayKey(d))){n++;d.setDate(d.getDate()-1)}
+  return n;
+}
+function spark(vals){
+  const W=300,H=64,p=6,max=Math.max(8,...vals),x=i=>p+i*(W-2*p)/(vals.length-1),y=v=>H-p-(v/max)*(H-2*p);
+  const pts=vals.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ");
+  return '<svg class="spark" viewBox="0 0 '+W+" "+H+'" preserveAspectRatio="none" role="img" aria-label="Fillers per 100 words over recent drills">'
+    +'<polyline points="'+pts+'" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
+    +'<circle cx="'+x(vals.length-1).toFixed(1)+'" cy="'+y(vals[vals.length-1]).toFixed(1)+'" r="4" fill="currentColor"/></svg>';
+}
+function renderToday(){
+  const today=dayKey(Date.now()),td=S.sessions.filter(s=>dayKey(s.t)===today),D=drills();
+  const done=m=>td.some(s=>s.mode===m), reps=td.filter(s=>s.mode==="register").length;
+  const last=D.slice(-5), avg=last.length?(last.reduce((a,s)=>a+rate(s),0)/last.length).toFixed(1):"–";
+  const item=(ok,href,t,sub)=>'<li class="'+(ok?"done":"")+'"><a href="'+href+'"><span class="tick">'+(ok?"✓":"")+'</span><span class="what">'+t+"<small>"+sub+'</small></span><span class="go">'+(ok?"Again":"Start")+"</span></a></li>";
+  let h='<div><h1>Ten minutes at the lectern</h1><p class="muted" style="margin-top:6px">Speak aloud, read it back, fix one thing. Repeat daily.</p></div>'
+    +'<div class="stats"><div class="stat"><b>'+streak()+'</b><span>day streak</span></div><div class="stat"><b>'+D.length+'</b><span>'+(D.length===1?"drill":"drills")+' spoken</span></div><div class="stat"><b>'+avg+'</b><span>fillers per 100 words</span></div></div>'
+    +'<div class="card"><h3>Today’s session</h3><ul class="plan">'
+    +item(done("professional"),"#speak-professional","Professional drill","One minute, structured answer, three target words")
+    +item(reps>=3,"#register","Register reps","Three casual sentences made professional ("+Math.min(reps,3)+" of 3)")
+    +item(done("debate"),"#speak-debate","Debate drill","Argue an assigned side, then switch")
+    +"</ul></div>";
+  if(D.length>=2){const v=D.slice(-12).map(rate);
+    h+='<div class="card"><h3>Fillers per 100 words, last '+v.length+" drills</h3>"+spark(v)+'<p class="note">Latest: '+v[v.length-1]+". Lower is better; under 2 sounds polished.</p></div>"}
+  h+='<div class="card"><h3>Recent drills</h3>';
+  if(!D.length)h+='<p class="muted" style="margin-top:8px">No drills yet. Your pace, filler rate and target-word use appear here after your first one.</p>';
+  else h+='<ul class="log">'+D.slice(-6).reverse().map(s=>{const d=new Date(s.t);return "<li><span>"+d.getDate()+"/"+(d.getMonth()+1)+" · "+MODE_LABEL[s.mode]+"</span><span>"+(wpm(s)||"–")+" wpm · "+rate(s)+" fillers · "+(s.hit||[]).length+"/3 words</span></li>"}).join("")+"</ul>";
+  h+="</div>";
+  $("#v-today").innerHTML=h;
+}
+
+/* ---------- Speak ---------- */
+let drill={phase:"setup",mode:"professional",secs:60};
+let tick=null;
+function newDrill(mode,keepPrompt){
+  const u=uses();
+  const targets=[...WORDS].sort((a,b)=>((u[a[0]]||0)-(u[b[0]]||0))||Math.random()-.5).slice(0,3);
+  let p=drill.p,side=drill.side;
+  if(keepPrompt){side=side==="for"?"against":"for"}
+  else{let n;do{n=pick(PROMPTS[mode])}while(PROMPTS[mode].length>1&&p&&n[0]===p[0]);p=n;side=mode==="debate"?pick(["for","against"]):null}
+  drill={phase:"setup",mode,p,side,targets,secs:drill.secs||60,text:"",coach:null};
+}
+function stopTick(){if(tick){clearInterval(tick);tick=null}}
+function renderSpeak(){
+  const el=$("#v-speak"),d=drill,fw=FW[d.p[1]];
+  document.body.classList.toggle("drilling",d.phase==="speaking");
+  if(d.phase==="setup"){
+    el.innerHTML='<div class="seg" role="group" aria-label="Drill type">'+["professional","conversation","debate"].map(m=>'<button type="button" data-mode="'+m+'" aria-pressed="'+(d.mode===m)+'">'+MODE_LABEL[m]+"</button>").join("")+"</div>"
+      +'<article class="card"><p class="eyebrow">'+MODE_LABEL[d.mode]+" drill</p><h2>"+esc(d.p[0])+"</h2>"+(d.side?'<p class="side">You argue '+d.side.toUpperCase()+"</p>":"")+"</article>"
+      +'<div class="card"><h3>Structure: '+fw.n+'</h3><ol class="steps">'+fw.s.map(s=>"<li>"+esc(s)+"</li>").join("")+"</ol></div>"
+      +'<div class="card"><h3>Work these words in</h3><div class="words3">'+d.targets.map(w=>"<div><b>"+w[0]+"</b><span>"+esc(w[3])+". “"+esc(w[4])+"”</span></div>").join("")+"</div></div>"
+      +'<div class="row"><button type="button" class="ghost" id="shuffle">Another prompt</button><label for="secs" style="margin:0 0 0 auto">Time</label><select id="secs">'+[60,90,120].map(s=>"<option value="+s+(d.secs===s?" selected":"")+">"+s+" seconds</option>").join("")+"</select></div>"
+      +'<button type="button" class="primary big" id="start">Start speaking</button>'
+      +'<p class="note">'+(dict?"Your microphone starts when you tap Start. Plan your first and last sentence before you do.":"When the keyboard opens, tap its microphone key and speak; your words appear as text. Plan your first and last sentence before you start.")+"</p>";
+    return;
+  }
+  if(d.phase==="speaking"){
+    el.innerHTML='<div class="clock" id="clock"><span class="t" id="clockT">'+mmss(d.secs)+'</span><button type="button" class="primary" id="finish">Finish</button><div class="bar"><i id="clockBar"></i></div></div>'
+      +'<p style="font-weight:600">'+esc(d.p[0])+(d.side?" <span class=\"muted\">("+d.side.toUpperCase()+")</span>":"")+"</p>"
+      +'<div class="chips">'+fw.s.map((s,i)=>'<span class="chip">'+(i+1)+". "+esc(s.split(":")[0])+"</span>").join("")+"</div>"
+      +'<div class="chips" id="tchips">'+d.targets.map(w=>'<span class="chip t" data-w="'+w[0]+'">'+w[0]+"</span>").join("")+"</div>"
+      +'<div><label for="speech">Your answer</label><textarea id="speech" autocapitalize="sentences" placeholder="Tap the microphone key on your keyboard and speak…"></textarea><p class="partial" id="partial"></p></div>'
+      +'<button type="button" class="ghost" id="cancel">Cancel drill</button>';
+    return;
+  }
+  // review
+  const a=d.a,s=d.rec;
+  if(!s){
+    el.innerHTML='<div class="card"><h2>Nothing was captured</h2><p style="margin-top:8px">The answer box was almost empty. On iPhone, tap inside the box, then tap the microphone key at the bottom of the keyboard before you speak.</p></div><button type="button" class="primary big" id="retry">Try again</button>';
+    return;
+  }
+  const w=wpm(s),pace=!w?"":w<120?"A little slow; aim for 130 to 160.":w>170?"Fast; slow down and pause between points.":"A good professional pace.";
+  let h='<div><p class="eyebrow">Review</p><h2>'+esc(d.p[0])+"</h2></div>"
+    +'<div class="meters"><div class="stat"><b>'+s.w+'</b><span>words in '+mmss(s.secs)+'</span></div><div class="stat"><b>'+(w||"–")+'</b><span>words per minute</span></div><div class="stat"><b>'+rate(s)+'</b><span>fillers per 100 words</span></div><div class="stat"><b>'+a.hit.length+'/3</b><span>target words used</span></div></div>'
+    +(pace?'<p class="note">'+pace+"</p>":"")
+    +'<div class="card"><h3>What you said</h3><p class="transcript" style="margin-top:8px">'+a.html+'</p><div class="legend"><span><mark class="m-f">filler</mark> '+a.f+'</span><span><mark class="m-c">casual</mark> '+a.c+'</span><span><mark class="m-t">target word</mark> '+a.hit.length+"</span></div></div>";
+  if(a.swaps.length)h+='<div class="card"><h3>Say this instead</h3><ul class="swaps">'+a.swaps.map(([k,v])=>'<li><mark class="m-c">'+esc(k)+"</mark> → "+esc(v)+"</li>").join("")+"</ul></div>";
+  h+='<div class="card" id="coach"><h3>Coach feedback</h3><div id="coachOut" class="stack" style="margin-top:10px">'+(d.coach?coachHtml(d.coach):'<p class="muted">Claude reads your answer and marks structure, vocabulary, register and unfinished sentences.</p>')+'</div><div class="row" style="margin-top:12px"><button type="button" class="primary" id="coachBtn"'+(d.coach?" hidden":"")+'>Get coach feedback</button><button type="button" class="ghost" id="coachStop" hidden>Stop</button><button type="button" class="ghost" id="coachCopy" hidden>Copy for Claude</button></div></div>'
+    +'<div class="row">'+(d.mode==="debate"?'<button type="button" class="primary" id="switch">Argue the other side</button>':'<button type="button" class="primary" id="again">Same prompt again</button>')+'<button type="button" class="ghost" id="next">New prompt</button></div>';
+  el.innerHTML=h;
+}
+function startSpeaking(){
+  drill.phase="speaking";drill.t0=Date.now();renderSpeak();
+  const ta=$("#speech");ta.focus();
+  if(dict)dict.start().catch(()=>{});
+  stopTick();
+  tick=setInterval(()=>{
+    const e=(Date.now()-drill.t0)/1000,left=drill.secs-e,c=$("#clock");if(!c)return;
+    c.classList.toggle("over",left<0);
+    $("#clockT").textContent=left>=0?mmss(Math.ceil(left)):"+"+mmss(-left);
+    $("#clockBar").style.width=Math.min(100,e/drill.secs*100)+"%";
+  },250);
+  window.scrollTo(0,0);
+}
+async function finishSpeaking(){
+  const secs=Math.round((Date.now()-drill.t0)/1000);stopTick();
+  if(dict&&dict.active()){$("#finish").disabled=true;try{await dict.stop()}catch(e){}}
+  const ta=$("#speech");const text=(ta?ta.value:"").trim();
+  drill.text=text;drill.phase="review";drill.a=analyse(text,drill.targets);drill.rec=null;
+  if(drill.a.w>=5){
+    drill.rec={t:Date.now(),mode:drill.mode,secs,w:drill.a.w,f:drill.a.f,c:drill.a.c,hit:drill.a.hit};
+    S.sessions.push(drill.rec);S.sessions=S.sessions.slice(-300);save();
+  }
+  renderSpeak();window.scrollTo(0,0);
+}
+function liveTargets(){
+  const ta=$("#speech");if(!ta)return;
+  for(const w of drill.targets){const c=$('#tchips [data-w="'+w[0]+'"]');if(c)c.classList.toggle("on",new RegExp("\\b"+w[2],"i").test(ta.value))}
+}
+function wireDict(){
+  dict.onFinal(({text})=>{const ta=$("#speech");if(!ta)return;ta.value=ta.value?ta.value+text:text.replace(/^\s+/,"");liveTargets()});
+  dict.onPartial(({text})=>{const p=$("#partial");if(p)p.textContent=text});
+}
+
+/* ---------- coach ---------- */
+function coachPrompt(json){
+  const d=drill,fw=FW[d.p[1]],s=d.rec;
+  return "You are a rigorous but encouraging speaking coach for a professional who wants to speak more fluently, precisely and formally. Below is the transcript of a spoken answer captured by speech-to-text. Ignore punctuation, capitalisation and likely mis-transcriptions. Phone dictation often removes “um” and “uh”, so judge fluency from word fillers, restarts, repetition and abandoned sentences.\n\n"
+    +"Drill type: "+MODE_LABEL[d.mode]+"\nPrompt: "+d.p[0]+(d.side?"\nAssigned side: "+d.side:"")+"\nSuggested structure: "+fw.n+"\nTarget words the speaker was asked to use: "+d.targets.map(w=>w[0]).join(", ")
+    +"\nTime allowed: "+d.secs+" seconds. Time taken: "+s.secs+" seconds. Words: "+s.w+".\n\nTranscript:\n\"\"\"\n"+d.text.slice(0,6000)+"\n\"\"\"\n\n"
+    +(json?'Reply with only one JSON object and no other text, in exactly this shape:\n{"scores":{"clarity":3,"structure":3,"vocabulary":3,"register":3},"summary":"","strengths":[""],"fixes":[{"quote":"","issue":"","better":""}],"polished":"","focus":""}\n'
+      +"scores are integers from 1 to 5. summary is one sentence. strengths has one or two short, specific items. fixes has three to five items: quote is an exact short phrase from the transcript, issue names the weakness (filler, vague word, slang, unfinished sentence, weak structure, repetition), better is what to say instead. polished is the same answer, same ideas, as this speaker could realistically say it aloud in a professional register, at most 120 words. focus is one concrete thing to practise in the next drill. "
+      :"Give me: scores out of 5 for clarity, structure, vocabulary and register; two strengths; three to five specific fixes that quote my words and give a better version; a polished version of my answer in at most 120 words; and one thing to practise next. ")
+    +"Use British English. Be specific; do not give generic advice.";
+}
+function coachHtml(c){
+  const sc=c.scores||{};
+  let h=c.summary?"<p><strong>"+esc(c.summary)+"</strong></p>":"";
+  h+="<div>"+["clarity","structure","vocabulary","register"].map(k=>{const v=Math.max(0,Math.min(5,Number(sc[k])||0));return '<div class="score"><span>'+k[0].toUpperCase()+k.slice(1)+'</span><span class="track"><i style="width:'+v*20+'%"></i></span><b>'+v+"</b></div>"}).join("")+"</div>";
+  const arr=x=>Array.isArray(x)?x:[];
+  if(arr(c.strengths).length)h+='<div><h3>What worked</h3><ul class="bul" style="margin-top:6px">'+arr(c.strengths).map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul></div>";
+  if(arr(c.fixes).length)h+="<div><h3>Fix next</h3>"+arr(c.fixes).map(f=>'<div class="fix"><q>'+esc(f&&f.quote||"")+'</q><div class="note">'+esc(f&&f.issue||"")+'</div><div class="better">'+esc(f&&f.better||"")+"</div></div>").join("")+"</div>";
+  if(c.polished)h+='<div><h3>Polished version: read it aloud once</h3><p style="margin-top:6px">'+esc(c.polished)+"</p></div>";
+  if(c.focus)h+='<div><h3>Focus for your next drill</h3><p style="margin-top:6px">'+esc(c.focus)+"</p></div>";
+  return h;
+}
+const COPY={rate_limited:"You have reached a usage limit for now. Try again later.",session_expired:"Sign in to Claude again, then retry.",refused:"Claude declined this one. Try a different answer.",invalid_json:"The feedback came back garbled. Tap the button to try again.",not_granted:"Coach feedback is switched off for this page.",sampling_disabled:"Coach feedback is not available on this account."};
+let coachCtl=null;
+async function runCoach(){
+  const out=$("#coachOut"),btn=$("#coachBtn"),stop=$("#coachStop"),copy=$("#coachCopy");
+  btn.disabled=true;out.innerHTML='<p class="muted">Thinking… this can take up to a minute.</p>';
+  const sample=await samplePromise;
+  if(!sample){btn.hidden=true;copy.hidden=false;out.innerHTML='<p class="muted">Coach feedback is not available in this view. Copy your answer with the coaching brief and paste it into a Claude chat.</p>';return}
+  coachCtl=new AbortController();stop.hidden=false;
+  try{
+    const c=await sample.json(coachPrompt(true),{signal:coachCtl.signal});
+    if(!c||typeof c!=="object"||!c.scores)throw {code:"invalid_json"};
+    drill.coach=c;out.innerHTML=coachHtml(c);btn.hidden=true;
+    if(drill.rec){drill.rec.sc=["clarity","structure","vocabulary","register"].map(k=>Number(c.scores[k])||0);save()}
+  }catch(e){
+    const code=e&&e.code;
+    out.innerHTML='<p class="muted">'+(code==="cancelled"?"Stopped.":COPY[code]||"Something interrupted the feedback. Tap the button to try again.")+"</p>";
+    if(code==="not_granted"||code==="sampling_disabled"||code==="capability_disabled"||code==="not_declared"){btn.hidden=true;copy.hidden=false}
+  }
+  btn.disabled=false;stop.hidden=true;
+}
+async function copyText(t,btn){
+  try{await navigator.clipboard.writeText(t);btn.textContent="Copied"}
+  catch(e){const out=$("#coachOut");out.innerHTML='<textarea readonly id="copyBox"></textarea>';const b=$("#copyBox");b.value=t;b.focus();b.select()}
+}
+
+/* ---------- Register ---------- */
+let reg={i:Math.floor(Math.random()*REGISTER.length),counted:false,out:""};
+function renderRegister(){
+  const r=REGISTER[reg.i],reps=S.sessions.filter(s=>s.mode==="register"&&dayKey(s.t)===dayKey(Date.now())).length;
+  $("#v-register").innerHTML='<div><h1>Say it professionally</h1><p class="muted" style="margin-top:6px">Say the formal version aloud before you look. '+reps+" rep"+(reps===1?"":"s")+" today.</p></div>"
+    +'<article class="card"><p class="eyebrow" style="color:var(--casual)">Casual</p><h2>“'+esc(r[0])+"”</h2></article>"
+    +'<div><label for="regIn">Your professional version</label><textarea id="regIn" style="min-height:96px" placeholder="Speak with the keyboard microphone, or type…"></textarea></div>'
+    +'<div class="row"><button type="button" class="primary" id="regShow">Show model answer</button><button type="button" class="ghost" id="regCheck">Coach check</button></div>'
+    +'<div id="regOut" class="stack">'+reg.out+"</div>"
+    +'<button type="button" class="ghost" id="regNext">Next sentence</button>';
+}
+function regCount(){if(reg.counted)return;reg.counted=true;S.sessions.push({t:Date.now(),mode:"register"});S.sessions=S.sessions.slice(-300);save()}
+const modelHtml=r=>'<div class="card"><p class="eyebrow" style="color:var(--hit)">Professional</p><h2>“'+esc(r[1])+"”</h2></div>";
+async function regCheck(){
+  const r=REGISTER[reg.i],mine=$("#regIn").value.trim(),out=$("#regOut"),btn=$("#regCheck");
+  if(!mine){out.innerHTML='<p class="note">Say or type your version first.</p>';return}
+  btn.disabled=true;out.innerHTML='<p class="muted">Checking…</p>';
+  const sample=await samplePromise;
+  if(!sample){out.innerHTML=modelHtml(r)+'<p class="note">Coach check is not available in this view. Compare with the model answer.</p>';regCount();btn.disabled=false;return}
+  try{
+    const c=await sample.json("A learner is practising professional spoken register. Casual sentence: \""+r[0]+"\". Their spoken professional version (speech-to-text, ignore punctuation): \""+mine.slice(0,600)+"\". Reply with only a JSON object: {\"verdict\":\"professional\"|\"close\"|\"still casual\",\"note\":\"one sentence on what works or what is still casual, quoting their words\",\"better\":\"a natural professional version they could say aloud\"}. British English.",{modelTier:"quick"});
+    out.innerHTML='<div class="card"><p class="eyebrow">Verdict: '+esc(c.verdict||"")+"</p><p>"+esc(c.note||"")+'</p><p class="better" style="color:var(--hit);font-weight:600;margin-top:8px">'+esc(c.better||"")+"</p></div>"+modelHtml(r);
+    regCount();
+  }catch(e){out.innerHTML=modelHtml(r)+'<p class="note">'+(COPY[e&&e.code]||"The check did not complete. Compare with the model answer.")+"</p>";regCount()}
+  reg.out=out.innerHTML;btn.disabled=false;
+}
+
+/* ---------- Words ---------- */
+let wfilter="all";
+function renderWords(){
+  const u=uses(),st=n=>n>=3?"a":n>0?"p":"n",active=WORDS.filter(w=>(u[w[0]]||0)>=3).length;
+  const list=WORDS.filter(w=>wfilter==="all"||st(u[w[0]]||0)===wfilter);
+  $("#v-words").innerHTML='<div><h1>Active vocabulary</h1><p class="muted" style="margin-top:6px">A word becomes active once you have spoken it in three drills. '+active+" of "+WORDS.length+" active.</p></div>"
+    +'<div class="seg" role="group" aria-label="Filter">'+[["all","All"],["n","Not yet spoken"],["a","Active"]].map(([k,l])=>'<button type="button" data-wf="'+k+'" aria-pressed="'+(wfilter===k)+'">'+l+"</button>").join("")+"</div>"
+    +'<div class="card" style="padding-block:4px">'+(list.length?list.map(w=>{const n=u[w[0]]||0,s=st(n);return '<div class="word"><div class="hd"><span><b>'+w[0]+"</b><em>"+w[1]+'</em></span><span class="badge '+s+'">'+(s==="a"?"Active":s==="p"?"Spoken "+n+" of 3":"Not yet spoken")+"</span></div><div>"+esc(w[3])+'</div><div class="ex">“'+esc(w[4])+"”</div></div>"}).join(""):'<p class="muted" style="padding:14px 0">Nothing here yet. Use target words in your drills to move them along.</p>')+"</div>";
+}
+
+/* ---------- routing and events ---------- */
+let view="today";
+function renderPassive(){if(view==="today")renderToday();if(view==="words")renderWords()}
+function route(){
+  const h=(location.hash||"#today").slice(1),parts=h.split("-");
+  const v=["today","speak","register","words"].includes(parts[0])?parts[0]:"today";
+  if(view==="speak"&&v!=="speak"&&drill.phase==="speaking"){stopTick();if(dict&&dict.active())dict.stop().catch(()=>{});drill.phase="setup"}
+  view=v;
+  for(const k of ["today","speak","register","words"])$("#v-"+k).hidden=k!==v;
+  document.querySelectorAll(".tabs a").forEach(a=>{if(a.dataset.tab===v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  if(v==="today")renderToday();
+  if(v==="speak"){if(PROMPTS[parts[1]]&&drill.phase!=="speaking")newDrill(parts[1]);renderSpeak()}
+  if(v==="register")renderRegister();
+  if(v==="words")renderWords();
+  document.body.classList.toggle("drilling",v==="speak"&&drill.phase==="speaking");
+  window.scrollTo(0,0);
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.mode){newDrill(b.dataset.mode);renderSpeak();return}
+  if(b.dataset.wf){wfilter=b.dataset.wf;renderWords();return}
+  switch(b.id){
+    case "shuffle":case "next":newDrill(drill.mode);renderSpeak();window.scrollTo(0,0);break;
+    case "start":startSpeaking();break;
+    case "finish":finishSpeaking();break;
+    case "cancel":stopTick();if(dict&&dict.active())dict.stop().catch(()=>{});drill.phase="setup";renderSpeak();break;
+    case "retry":case "again":drill.phase="setup";drill.coach=null;renderSpeak();window.scrollTo(0,0);break;
+    case "switch":newDrill("debate",true);renderSpeak();window.scrollTo(0,0);break;
+    case "coachBtn":runCoach();break;
+    case "coachStop":if(coachCtl)coachCtl.abort();break;
+    case "coachCopy":copyText(coachPrompt(false),b);break;
+    case "regShow":reg.out=modelHtml(REGISTER[reg.i]);$("#regOut").innerHTML=reg.out;regCount();break;
+    case "regCheck":regCheck();break;
+    case "regNext":reg={i:(reg.i+1+Math.floor(Math.random()*(REGISTER.length-1)))%REGISTER.length,counted:false,out:""};renderRegister();break;
+  }
+});
+document.addEventListener("change",e=>{if(e.target.id==="secs")drill.secs=Number(e.target.value)||60});
+document.addEventListener("input",e=>{if(e.target.id==="speech")liveTargets()});
+window.addEventListener("hashchange",route);
+newDrill("professional");
+route();
+initCaps();
+</script>
+</body>
+</html>
